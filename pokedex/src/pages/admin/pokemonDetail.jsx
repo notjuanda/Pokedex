@@ -3,7 +3,7 @@ import { Spinner, Alert, Row, Col, Button, Table, Modal, Form } from 'react-boot
 import { useParams, Link } from 'react-router-dom';
 import { obtenerPokemonConRangos } from '../../services/pokemonService';
 import { listaTiposDePokemon } from '../../services/pokemonTipoService';
-import { obtenerLineaEvolutiva, asignarEvolucion, eliminarEvolucion } from '../../services/evolucionService';
+import { obtenerLineaEvolutiva, asignarEvolucion, eliminarEvolucion, verificarEvolucionDirecta } from '../../services/evolucionService';
 import { listaHabilidadesDePokemon, asignarHabilidadAPokemon, eliminarRelacionPokemonHabilidad } from '../../services/pokemonHabilidadService';
 import { listaPokemones } from '../../services/pokemonService';
 import { listaHabilidades } from '../../services/habilidadService';
@@ -15,6 +15,8 @@ const PokemonDetail = () => {
     const [pokemon, setPokemon] = useState(null);
     const [tipos, setTipos] = useState([]);
     const [evoluciones, setEvoluciones] = useState([]);
+    const [evolucionesNew, setEvolucionesNew] = useState([]);
+
     const [habilidades, setHabilidades] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -23,7 +25,6 @@ const PokemonDetail = () => {
     const [allHabilidades, setAllHabilidades] = useState([]);
     const [newEvolucionId, setNewEvolucionId] = useState('');
     const [newHabilidadId, setNewHabilidadId] = useState('');
-    const [metodoEvolucion, setMetodoEvolucion] = useState('Nivel');
     const [showEvolucionModal, setShowEvolucionModal] = useState(false);
     const [showHabilidadModal, setShowHabilidadModal] = useState(false);
 
@@ -63,48 +64,92 @@ const PokemonDetail = () => {
 
     const handleAsignarEvolucion = async () => {
         try {
-            await asignarEvolucion(id, newEvolucionId, metodoEvolucion, 32);
-            const evolucionesData = await obtenerLineaEvolutiva(id);
-            setEvoluciones(evolucionesData);
+            const tieneEvolucionDirecta = await verificarEvolucionDirecta(id);
+            if (tieneEvolucionDirecta) {
+                alert('Este Pokémon ya tiene una evolución asignada. No puede tener más de una.');
+                return;
+            }
+            await asignarEvolucion(id, newEvolucionId);
+            const nuevasEvoluciones = await obtenerLineaEvolutiva(id);
+            setEvoluciones(nuevasEvoluciones);
             setShowEvolucionModal(false);
         } catch (error) {
-            alert('Error al asignar la evolución.', error);
+            console.error('Error al asignar la evolución:', error);
+            alert('Error al asignar la evolución. Verifica los datos e intenta nuevamente.');
         }
-    };
+    };     
 
     const handleAsignarHabilidad = async () => {
         try {
-            await asignarHabilidadAPokemon(id, newHabilidadId);
             const habilidadesData = await listaHabilidadesDePokemon(id);
-            setHabilidades(habilidadesData);
+            const habilidadYaAsignada = habilidadesData.some(
+                (habilidad) => habilidad.id === parseInt(newHabilidadId)
+            );
+            if (habilidadYaAsignada) {
+                alert('Esta habilidad ya está asignada a este Pokémon.');
+                return; 
+            }
+            await asignarHabilidadAPokemon(id, newHabilidadId);
+            const nuevasHabilidades = await listaHabilidadesDePokemon(id);
+            setHabilidades(nuevasHabilidades);
             setShowHabilidadModal(false);
         } catch (error) {
             alert('Error al asignar la habilidad.', error);
         }
     };
-
-    const handleEliminarEvolucion = async (evolucionId) => {
-        if (evolucionId === parseInt(id)) {
-            alert('No puedes eliminar la evolución que corresponde al Pokémon actual.');
-            return;
-        }
     
+    const handleEliminarEvolucion = async (idEliminar) => {
         try {
-            await eliminarEvolucion(id, evolucionId);
-            const evolucionesData = await obtenerLineaEvolutiva(id);
-            setEvoluciones(evolucionesData);
-            window.location.reload(); // Recargar la página
-        } catch (error) {
-            alert('Error al eliminar la evolución.', error);
+            const pokemonActualId = id; 
+            const evoluciones = await obtenerLineaEvolutiva(pokemonActualId);
+            setEvolucionesNew(evoluciones);
+            if (!Array.isArray(evoluciones) || evoluciones.length === 0) {
+                alert('No se encontró la línea evolutiva.');
+                return;
+            }
+            const ids = evoluciones.map(evo => evo.id);
+            console.log('[LOG] IDs extraídos:', ids);
+            const [id1, id2, id3] = ids;
+            let pokemonId1, pokemonId2;
+            if (pokemonActualId == id1 && idEliminar == id2) {
+                pokemonId1 = id1;
+                pokemonId2 = id2;
+            } else if (pokemonActualId == id1 && idEliminar == id3) {
+                pokemonId1 = id2;
+                pokemonId2 = id3;
+            } else if (pokemonActualId == id2 && idEliminar == id1) {
+                pokemonId1 = id1;
+                pokemonId2 = id2;
+            } else if (pokemonActualId == id2 && idEliminar == id3) {
+                pokemonId1 = id2;
+                pokemonId2 = id3;
+            } else if (pokemonActualId == id3 && idEliminar == id2) {
+                pokemonId1 = id2;
+                pokemonId2 = id3;
+            } else if (pokemonActualId == id3 && idEliminar == id1) {
+                pokemonId1 = id1;
+                pokemonId2 = id2;
+            } else {
+                alert('No se encontró ninguna relación válida para eliminar.');
+                return;
+            }
+            await eliminarEvolucion(pokemonId1, pokemonId2);
+            const nuevasEvoluciones = await obtenerLineaEvolutiva(pokemonActualId);
+        setEvolucionesNew(nuevasEvoluciones);
+        alert('Evolución eliminada exitosamente.');
+
+    } catch (error) {
+        alert('Error al eliminar la evolución. Verifica los datos e intenta nuevamente.', error);
         }
-    };    
+    };
+    
     
     const handleEliminarHabilidad = async (habilidadId) => {
         try {
             await eliminarRelacionPokemonHabilidad(id, habilidadId);
             const habilidadesData = await listaHabilidadesDePokemon(id);
             setHabilidades(habilidadesData);
-            window.location.reload(); // Recargar la página
+            window.location.reload();
         } catch (error) {
             alert('Error al eliminar la habilidad.', error);
         }
@@ -148,7 +193,6 @@ const PokemonDetail = () => {
                                 style={{ width: '150px', height: '150px', objectFit: 'cover' }}
                             />
                             <p>{evolucion.nombre}</p>
-                            <p>{evolucion.nivelEvolucion}</p>
                         </Link>
                         <Button 
                             variant="danger" 
@@ -206,14 +250,25 @@ const PokemonDetail = () => {
                         <h2>{pokemon.nombre}</h2>
                         <p>Número de Pokédex: {pokemon.nroPokedex}</p>
                         <p>Descripción: {pokemon.descripcion}</p>
+                        <p>
+                            {pokemon.nivelEvolucion && pokemon.nivelEvolucion > 1
+                                ? `Este Pokémon evoluciona al nivel ${pokemon.nivelEvolucion}`
+                                : ''}
+                        </p>
                     </Col>
+
                     <Col md={8}>
                         <h2>Tipos</h2>
                         <div className="d-flex flex-wrap justify-content-center">
                             {tipos.map((tipo) => (
                                 <div key={tipo.id} className="m-2 text-center">
-                                    <p>{tipo.nombre}</p>
+                                    <img 
+                                        src={`http://localhost:3000${tipo.imagen}`}
+                                        alt={tipo.nombre} 
+                                        style={{ width: '50px', height: '50px', marginRight: '8px' }} 
+                                    />
                                 </div>
+                                
                             ))}
                         </div>
 
@@ -256,14 +311,6 @@ const PokemonDetail = () => {
                             </option>
                         ))}
                         </Form.Select>
-                    </Form.Group>
-                    <Form.Group className="mt-3">
-                        <Form.Label>Método de Evolución</Form.Label>
-                        <Form.Control
-                            type="text"
-                            value={metodoEvolucion}
-                            onChange={(e) => setMetodoEvolucion(e.target.value)}
-                        />
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>

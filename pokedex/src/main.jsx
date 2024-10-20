@@ -40,7 +40,7 @@ const router = createBrowserRouter([
     element: <ListaPokemonesUsers />
   },
   {
-    path: '/adicionar/:pokemonId',
+    path: '/admin/adicionar/:pokemonId',
     element: <AgregarPokemonTipo />
   },
   {

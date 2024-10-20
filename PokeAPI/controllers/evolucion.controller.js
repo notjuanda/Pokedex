@@ -73,6 +73,24 @@ exports.obtenerLineaEvolutiva = async (req, res) => {
     }
 };
 
+exports.obtenerEvolucionDirecta = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const evolucionDirecta = await Evolucion.findOne({
+            where: { pokemon_id: id },
+        });
+
+        const tieneEvolucionDirecta = !!evolucionDirecta; // Convertir a booleano
+        res.status(200).json({ tieneEvolucionDirecta });
+    } catch (error) {
+        console.error(`Error al obtener evolución directa: ${error.message}`, error);
+        res.status(500).json({
+            msg: 'Error interno del servidor al obtener la evolución directa.',
+        });
+    }
+};
+
 exports.asignarEvolucion = async (req, res) => {
     const { pokemon_id, pokemon_evolucionado_id} = req.body;
 
@@ -113,28 +131,40 @@ exports.asignarEvolucion = async (req, res) => {
 exports.eliminarEvolucion = async (req, res) => {
     const { pokemon_id, pokemon_evolucionado_id } = req.params;
 
+    console.log('[INFO] Solicitud recibida para eliminar relación directa.');
+    console.log(`[INFO] Pokémon base ID: ${pokemon_id}, Pokémon evolucionado ID: ${pokemon_evolucionado_id}`);
+
     if (!pokemon_id || !pokemon_evolucionado_id) {
-        return res.status(400).json({ 
-            msg: 'Se requieren pokemon_id y pokemon_evolucionado_id para eliminar la evolución.' 
+        return res.status(400).json({
+            msg: 'Se requieren pokemon_id y pokemon_evolucionado_id para eliminar la evolución.'
         });
     }
 
     try {
-        const evolucion = await Evolucion.findOne({
+        // Buscar la relación directa entre los dos Pokémon
+        const relacion = await Evolucion.findOne({
             where: {
-                pokemon_id,
-                pokemon_evolucionado_id
+                [Op.or]: [
+                    { pokemon_id, pokemon_evolucionado_id },
+                    { pokemon_id: pokemon_evolucionado_id, pokemon_evolucionado_id: pokemon_id }
+                ]
             }
         });
 
-        if (!evolucion) {
-            return res.status(404).json({ msg: 'Relación de evolución no encontrada.' });
+        if (!relacion) {
+            console.warn('[WARN] No se encontró ninguna relación directa para eliminar.');
+            return res.status(404).json({
+                msg: 'No se encontró ninguna relación directa para eliminar entre los Pokémon proporcionados.'
+            });
         }
 
-        await evolucion.destroy();
-        res.status(200).json({ msg: 'Evolución eliminada exitosamente.' });
+        // Eliminar la relación encontrada
+        await relacion.destroy();
+        console.log(`[INFO] Relación eliminada entre ${pokemon_id} y ${pokemon_evolucionado_id}`);
+
+        res.status(200).json({ msg: 'Relación eliminada exitosamente.' });
     } catch (error) {
-        console.error(`Error en eliminarEvolucion: ${error.message}`, error);
+        console.error(`[ERROR] Error al eliminar la evolución: ${error.message}`, error);
         res.status(500).json({
             msg: 'Error interno del servidor al eliminar la evolución.'
         });

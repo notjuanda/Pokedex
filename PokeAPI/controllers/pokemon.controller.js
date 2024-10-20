@@ -62,7 +62,7 @@ exports.listaPokemonPorID = async (req, res) => {
 
 exports.crearPokemon = async (req, res) => {
     try {
-        const { nombre, nroPokedex, descripcion, hp, ataque, defensa, spAtaque, spDefensa, velocidad } = req.body;
+        const { nombre, nroPokedex, descripcion, hp, ataque, defensa, spAtaque, spDefensa, velocidad, nivelEvolucion } = req.body;
         const nuevoPokemon = await Pokemon.create({
             nombre,
             nroPokedex,
@@ -72,7 +72,8 @@ exports.crearPokemon = async (req, res) => {
             defensa,
             spAtaque,
             spDefensa,
-            velocidad
+            velocidad,
+            nivelEvolucion
         }) 
         console.log("Pokemon creado con ID:", nuevoPokemon.id);
         const imagenUrl = await subirImagenPokemon(req, nuevoPokemon.id);
@@ -94,7 +95,7 @@ exports.crearPokemon = async (req, res) => {
 
 exports.editarPokemon = async (req, res) => {
     const { id } = req.params;
-    const { nombre, nroPokedex, descripcion, hp, ataque, defensa, spAtaque, spDefensa, velocidad } = req.body;
+    const { nombre, nroPokedex, descripcion, hp, ataque, defensa, spAtaque, spDefensa, velocidad, nivelEvolucion } = req.body;
 
     try {
         await Pokemon.update(
@@ -107,7 +108,8 @@ exports.editarPokemon = async (req, res) => {
             defensa,
             spAtaque,
             spDefensa,
-            velocidad
+            velocidad, 
+            nivelEvolucion
             }, {
                 where: { id } 
             }

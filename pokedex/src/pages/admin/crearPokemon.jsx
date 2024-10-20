@@ -19,6 +19,7 @@ const CrearEditarPokemon = () => {
     const [spAtaque, setSpAtaque] = useState('');
     const [spDefensa, setSpDefensa] = useState('');
     const [velocidad, setVelocidad] = useState('');
+    const [nivelEvolucion, setNivelEvolucion] = useState('');
     const [imagen, setImagen] = useState(null);
     const [imagenActual, setImagenActual] = useState('');
     const [error, setError] = useState(null);
@@ -38,6 +39,7 @@ const CrearEditarPokemon = () => {
                     setSpAtaque(data.spAtaque || '');
                     setSpDefensa(data.spDefensa || '');
                     setVelocidad(data.velocidad || '');
+                    setNivelEvolucion(data.nivelEvolucion || '');
                     setImagenActual(data.imagen || '');
                 } catch (setError) {
                     setError('Error al cargar los datos del Pokémon.');
@@ -60,6 +62,7 @@ const CrearEditarPokemon = () => {
             spAtaque: spAtaque,
             spDefensa: spDefensa,
             velocidad : velocidad ,
+            nivelEvolucion: nivelEvolucion,
             imagen: imagen || imagenActual,
         };
 
@@ -193,7 +196,18 @@ const CrearEditarPokemon = () => {
                             </Form.Group>
                         </Col>
 
-                        <Col md={12} className="mb-3">
+                        <Col md={6} className="mb-3">
+                            <Form.Group controlId="velocidad">
+                                <Form.Label>Nivel de Evolucion</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    value={nivelEvolucion}
+                                    onChange={(e) => setNivelEvolucion(e.target.value)}
+                                />
+                            </Form.Group>
+                        </Col>
+
+                        <Col md={6} className="mb-3">
                             <Form.Group controlId="imagen">
                                 <Form.Label>Seleccionar Imagen</Form.Label>
                                 <Form.Control type="file" onChange={handleImageChange} />

@@ -113,7 +113,7 @@ const ListaPokemones = () => {
                                         </Button>
                                         <Button
                                             as={Link}
-                                            to={`/adicionar/${pokemon.id}`}
+                                            to={`/admin/adicionar/${pokemon.id}`}
                                             variant = "dark"
                                         >
                                             Asignar tipo
