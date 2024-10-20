@@ -84,14 +84,18 @@ export const obtenerPokemonConRangos = async (id) => {
 export const buscarPokemon = async (query) => {
     try {
         const { data } = await api.get('/pokemon/buscar/pokemon', {
-            params: { query },
+            params: { query }, // Enviamos el término de búsqueda como parámetro
         });
+
         if (!data || data.length === 0) {
+            console.warn('No se encontraron Pokémon que coincidan con la búsqueda.');
             return [];  
         }
-        return data; 
+
+        return data;
     } catch (error) {
-        const errorMessage = error.response?.data?.msg || 'No se pudo realizar la búsqueda.';
+        const errorMessage = error.response?.data?.msg || 'Error al realizar la búsqueda.';
+        console.error(`Error en buscarPokemon: ${errorMessage}`, error);
         throw new Error(errorMessage);
     }
 };

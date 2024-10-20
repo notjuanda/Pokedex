@@ -7,41 +7,62 @@ const fs = require('fs');
 
 exports.buscarPokemon = async (req, res) => {
     const { query } = req.query;
+    const searchTerm = query ? query.toLowerCase() : '';
+
     try {
-        const whereClause = {
+        // Verificar si existe algún tipo con ese nombre
+        const tipos = await Tipo.findAll({
+            where: db.Sequelize.where(
+                db.Sequelize.fn('LOWER', db.Sequelize.col('nombre')),
+                { [Op.like]: `%${searchTerm}%` }
+            ),
+            attributes: ['id']
+        });
+
+        let whereClause = {
             [Op.or]: [
-                { nombre: { [Op.like]: `%${query}%` } },
+                db.Sequelize.where(
+                    db.Sequelize.fn('LOWER', db.Sequelize.col('Pokemon.nombre')),
+                    { [Op.like]: `%${searchTerm}%` }
+                ),
                 { nroPokedex: { [Op.eq]: parseInt(query) || 0 } }
             ]
         };
+
+        // Si hay coincidencias en tipos, añadir la condición al where
+        if (tipos.length > 0) {
+            const tipoIds = tipos.map(tipo => tipo.id);
+            whereClause = {
+                [Op.or]: [
+                    whereClause,
+                    { '$Tipos.id$': { [Op.in]: tipoIds } }
+                ]
+            };
+        }
+
+        // Buscar Pokémon aplicando la condición
         const pokemones = await Pokemon.findAll({
             where: whereClause,
             include: [
                 {
                     model: Tipo,
-                    attributes: ['id', 'nombre', 'imagen'],  
-                    through: { attributes: [] },  
-                    required: false  
+                    through: { attributes: [] },
+                    attributes: [] // No devolver los tipos en la respuesta
                 }
             ],
             order: [['nroPokedex', 'ASC']]
         });
 
-        console.log(`[LOG] Pokémon encontrados: ${JSON.stringify(pokemones)}`);
-
         if (pokemones.length === 0) {
-            console.log('[LOG] No se encontraron Pokémon para la búsqueda.');
             return res.status(404).json({ msg: "No se encontraron Pokémon que coincidan con la búsqueda." });
         }
 
-        console.log('[LOG] Devolviendo los resultados encontrados.');
         res.status(200).json(pokemones);
     } catch (error) {
         console.error(`[LOG] Error en buscarPokemon: ${error.message}`, error);
         res.status(500).json({ msg: "Error interno al buscar Pokémon." });
     }
 };
-
 
 function calcularRangoStat(baseStat, esHp = false) {
     const calcularMin = (nivel) => {
