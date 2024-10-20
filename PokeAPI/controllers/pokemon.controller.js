@@ -1,8 +1,47 @@
 const db = require("../models");
 const { Op } = require("sequelize");
 const Pokemon = db.Pokemon;
+const Tipo = db.Tipo;
 const path = require('path');
 const fs = require('fs'); 
+
+exports.buscarPokemon = async (req, res) => {
+    const { query } = req.query;
+    try {
+        const whereClause = {
+            [Op.or]: [
+                { nombre: { [Op.like]: `%${query}%` } },
+                { nroPokedex: { [Op.eq]: parseInt(query) || 0 } }
+            ]
+        };
+        const pokemones = await Pokemon.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Tipo,
+                    attributes: ['id', 'nombre', 'imagen'],  
+                    through: { attributes: [] },  
+                    required: false  
+                }
+            ],
+            order: [['nroPokedex', 'ASC']]
+        });
+
+        console.log(`[LOG] Pokémon encontrados: ${JSON.stringify(pokemones)}`);
+
+        if (pokemones.length === 0) {
+            console.log('[LOG] No se encontraron Pokémon para la búsqueda.');
+            return res.status(404).json({ msg: "No se encontraron Pokémon que coincidan con la búsqueda." });
+        }
+
+        console.log('[LOG] Devolviendo los resultados encontrados.');
+        res.status(200).json(pokemones);
+    } catch (error) {
+        console.error(`[LOG] Error en buscarPokemon: ${error.message}`, error);
+        res.status(500).json({ msg: "Error interno al buscar Pokémon." });
+    }
+};
+
 
 function calcularRangoStat(baseStat, esHp = false) {
     const calcularMin = (nivel) => {

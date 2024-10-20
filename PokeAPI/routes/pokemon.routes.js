@@ -8,6 +8,7 @@ module.exports = app => {
     router.put('/:id', pokemonController.editarPokemon);
     router.delete('/:id', pokemonController.eliminarPokemon);
     router.get('/:id/rango', pokemonController.obtenerPokemonConRangos);
+    router.get('/buscar/pokemon', pokemonController.buscarPokemon);
 
     app.use('/pokemon', router);
 };

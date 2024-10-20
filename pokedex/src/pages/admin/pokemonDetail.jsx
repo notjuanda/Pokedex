@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Spinner, Alert, Row, Col, Button, Table, Modal, Form } from 'react-bootstrap';
 import { useParams, Link } from 'react-router-dom';
 import { obtenerPokemonConRangos } from '../../services/pokemonService';
-import { listaTiposDePokemon } from '../../services/pokemonTipoService';
+import { listaTiposDePokemon, eliminarRelacionPokemonTipo } from '../../services/pokemonTipoService';
 import { obtenerLineaEvolutiva, asignarEvolucion, eliminarEvolucion, verificarEvolucionDirecta } from '../../services/evolucionService';
 import { listaHabilidadesDePokemon, asignarHabilidadAPokemon, eliminarRelacionPokemonHabilidad } from '../../services/pokemonHabilidadService';
 import { listaPokemones } from '../../services/pokemonService';
@@ -103,6 +103,7 @@ const PokemonDetail = () => {
             const pokemonActualId = id; 
             const evoluciones = await obtenerLineaEvolutiva(pokemonActualId);
             setEvolucionesNew(evoluciones);
+            console.log('[LOG] Evoluciones extraídas:', evolucionesNew);
             if (!Array.isArray(evoluciones) || evoluciones.length === 0) {
                 alert('No se encontró la línea evolutiva.');
                 return;
@@ -154,6 +155,17 @@ const PokemonDetail = () => {
             alert('Error al eliminar la habilidad.', error);
         }
     };
+
+    const handleEliminarTipo = async (tipoId) => {
+        try {
+            await eliminarRelacionPokemonTipo(id, tipoId);
+            const tiposData = await listaTiposDePokemon(id);
+            setTipos(tiposData);
+            window.location.reload();
+        } catch (error) {
+            alert('Error al eliminar el tipo.', error);
+        }
+    }
 
     const renderHabilidades = () => (
         <div className="d-flex flex-wrap justify-content-center">
@@ -267,6 +279,13 @@ const PokemonDetail = () => {
                                         alt={tipo.nombre} 
                                         style={{ width: '50px', height: '50px', marginRight: '8px' }} 
                                     />
+                                    <Button 
+                                        variant="danger" 
+                                        size="sm" 
+                                        className="mt-2"
+                                        onClick={() => handleEliminarTipo(tipo.id)}>
+                                        Eliminar Tipo
+                                    </Button>
                                 </div>
                                 
                             ))}

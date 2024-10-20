@@ -80,3 +80,18 @@ export const obtenerPokemonConRangos = async (id) => {
         throw new Error('No se pudieron obtener los rangos del Pokémon.');
     }
 };
+
+export const buscarPokemon = async (query) => {
+    try {
+        const { data } = await api.get('/pokemon/buscar/pokemon', {
+            params: { query },
+        });
+        if (!data || data.length === 0) {
+            return [];  
+        }
+        return data; 
+    } catch (error) {
+        const errorMessage = error.response?.data?.msg || 'No se pudo realizar la búsqueda.';
+        throw new Error(errorMessage);
+    }
+};
