@@ -38,6 +38,10 @@ module.exports = (sequelize, DataTypes) => {
         velocidad: {
             type: DataTypes.INTEGER,
             allowNull: false
+        },
+        nivelEvolucion: {
+            type: DataTypes.INTEGER,
+            allowNull: false
         }
     }, {
         timestamps: false,

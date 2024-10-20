@@ -52,7 +52,7 @@ exports.obtenerLineaEvolutiva = async (req, res) => {
         };
 
         const pokemonInicial = await Pokemon.findByPk(pokemon_id, {
-            attributes: ['id', 'nombre', 'nroPokedex', 'imagen', 'descripcion']
+            attributes: ['id', 'nombre', 'nroPokedex', 'imagen']
         });
 
         if (!pokemonInicial) {
@@ -66,16 +66,15 @@ exports.obtenerLineaEvolutiva = async (req, res) => {
 
         res.status(200).json({ evoluciones: lineaEvolutiva });
     } catch (error) {
-        console.error(`Error en obtenerLineaEvolutiva: ${error.message}`, error);
+        console.error('Error en obtenerLineaEvolutiva: ${error.message}', error);
         res.status(500).json({
             msg: 'Error interno del servidor al obtener la línea evolutiva.'
         });
     }
 };
 
-
 exports.asignarEvolucion = async (req, res) => {
-    const { pokemon_id, pokemon_evolucionado_id, metodo, nivelEvolucion } = req.body;
+    const { pokemon_id, pokemon_evolucionado_id} = req.body;
 
     if (!pokemon_id || !pokemon_evolucionado_id) {
         return res.status(400).json({ 
@@ -98,10 +97,8 @@ exports.asignarEvolucion = async (req, res) => {
         }
 
         await Evolucion.create({
-            pokemon_id,
+            pokemon_id, 
             pokemon_evolucionado_id,
-            metodo,
-            nivelEvolucion
         });
 
         res.status(201).json({ msg: 'Evolución asignada exitosamente.' });

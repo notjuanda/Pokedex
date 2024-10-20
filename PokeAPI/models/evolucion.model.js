@@ -22,14 +22,6 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id'
             },
             onDelete: 'CASCADE'
-        },
-        metodo: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        nivelEvolucion: {
-            type: DataTypes.INTEGER,
-            allowNull: true 
         }
     }, {
         timestamps: false,
